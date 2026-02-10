@@ -1,0 +1,25 @@
+# Credentials — never commit secrets to Git
+.env
+
+# Raw data files — too large for Git, download from Kaggle
+data/
+
+# Temporary files
+__pycache__/
+
+# Great Expectations auto-generated files
+great_expectations/uncommitted/
+
+# Logs and Temporary files
+*.log
+temp_pdf_images/
+*.pdf
+
+# Editor/OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# workflow private files
+WORKFLOW.md

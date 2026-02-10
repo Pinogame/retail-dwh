@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # =========================================
+  # 1. DATABASE SERVICE (PostgreSQL)
+  # =========================================
+  postgres:
+    image: postgres:16
+    container_name: retail_dwh_db
+    
+    # Security: Load credentials from .env file (Task 2.2)
+    env_file:
+      - .env
+      
+    # Port Mapping: Expose DB to localhost (Host:Container)
+    ports:
+      - "${POSTGRES_PORT}:5432"
+      
+    # Persistence & Configuration
+    volumes:
+      # Mount data volume (Production Ready: Persistence)
+      - postgres_data:/var/lib/postgresql/data
+      
+      # Mount custom config (Production Ready: Tuning)
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf
+      
+      # Mount SQL scripts required for initialization
+      - ./sql:/docker-entrypoint-initdb.d
+      
+      # Mount Raw Data (CSV) for loading
+      - ./data:/data
+
+    # Use custom config file
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+
+    # Healthcheck: Ensure DB is ready before others start (Task 2.1)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    # Reliability: Auto-restart if crashes (Task 2.1)
+    restart: unless-stopped
+    
+    # Resources: Limit CPU/RAM usage (Task 2.1)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  # =========================================
+  # 2. DATA QUALITY SERVICE (Great Expectations)
+  # =========================================
+  gx:
+    build: 
+      context: ./great_expectations  # Build from great_expectations/Dockerfile
+    container_name: retail_dwh_gx
+    
+    # Link to project files
+    volumes:
+      - ./:/app
+      
+    # Security: Needs DB credentials
+    env_file:
+      - .env
+      
+    # Wait for DB to be healthy
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # =========================================
+  # 3. VISUALIZATION (Apache Superset)
+  # =========================================
+  superset:
+    build:
+      context: ./superset
+    container_name: retail_dwh_superset
+    ports:
+      - "8088:8088"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

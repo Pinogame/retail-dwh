@@ -160,6 +160,5 @@ This repository follows a strict development workflow as outlined below:
 ├── superset/               # Superset custom Dockerfile
 ├── docker-compose.yml      # Orchestration
 ├── .env.example            # Environment template
-├── WORKFLOW.md             # Detailed development log
 └── README.md               # Project documentation
 ```
